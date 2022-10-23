@@ -211,15 +211,6 @@ class PriorityClient {
   }
 }
 
-// *Idea: use Knex query interface as inspiration for the chaining methods
-// TODO
-// *1.create 'findOne()' method to fetch one entity. It should replace 'where()' - DONE✔️
-// *2.create 'where()' method to fetch multple entities. It should replace 'filter()' - DONE✔️
-// *3.create 'withRelated()' method to fetch related entities(subforms). It should replace 'include' - DONE✔️
-// *4.create 'since()' method to fetch entities from the provided timestamp - DONE✔️
-// *5.create 'orderBy()' method to sort the entities fetched - DONE✔️
-// *6.create 'paginate()' method to fetch smaller number of entities at a time - DONE✔️
-// *7.Also... change to existing snake_case naming to camelCase - DONE✔️
-// *8.Add support for logic operators in 'where()' method - DONE✔️
+// TODO: Add tests for each of the methods and also those that work to create complex queries
 
 export default PriorityClient;
