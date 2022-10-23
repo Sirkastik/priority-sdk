@@ -39,15 +39,31 @@ class PriorityClient {
     }, this.#url);
   }
 
-  #convertObjectToString(object, equator, joiner) {
-    return Object.entries(object)
-      .map(([key, value]) => `${key}${equator}'${value}'`)
-      .join(joiner);
+  /**
+   *
+   * @param  {...string} params param strings to append to url
+   */
+  #appendParamToUrl(...params) {
+    const prefix = this.#url.includes("?") ? "&" : "?";
+    this.#appendToUrl(prefix, ...params);
   }
 
-  #appendParamToUrl(paramClause) {
-    const paramPrefix = this.#url.includes("?") ? "&" : "?";
-    this.#appendToUrl(paramPrefix, paramClause);
+  /**
+   *
+   * @param {{[key: string]: any}} object
+   * @param {string} equator
+   * @param {string} joiner
+   * @returns {string}
+   */
+  #convertObjectToString(object, equator, joiner) {
+    return Object.entries(object)
+      .map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return `${key}${value[0]}'${value[1]}'`;
+        }
+        return `${key}${equator}'${value}'`;
+      })
+      .join(joiner);
   }
 
   /**
@@ -59,40 +75,55 @@ class PriorityClient {
     return this;
   }
 
-  where(whereObject) {
-    const whereClause = this.#convertObjectToString(whereObject, "=", ",");
-    whereClause && this.#appendToUrl("(", whereClause, ")");
-    return this;
-  }
-
-  filter(filterObject) {
-    const filters = this.#convertObjectToString(
-      filterObject,
-      "+eq+",
-      "+and+"
-    );
-    filters && this.#appendParamToUrl(`$filter=${filters}`);
+  /**
+   *
+   * @param {string} subformName the subform to get the resources from PRIORITY
+   */
+  subform(subformName) {
+    this.#appendToUrl("/", subformName);
     return this;
   }
 
   /**
    *
-   * @param {string} subformName The name of the screen's subform to include with the main screeen's data
+   * @param {{[key: string]: string}} identifier
    * @returns
    */
-  include(subformName) {
+  findOne(identifier) {
+    const searchClause = this.#convertObjectToString(identifier, "=", ",");
+    searchClause && this.#appendToUrl("(", searchClause, ")");
+    return this;
+  }
+
+  /**
+   *
+   * @param {{[key: string]: string|[equator: string, value:string]}} filters
+   * @returns
+   */
+  where(filters) {
+    const whereClause = this.#convertObjectToString(filters, "+eq+", "+and+");
+    whereClause && this.#appendParamToUrl("$filter=", whereClause);
+    return this;
+  }
+
+  /**
+   *
+   * @param {string} subformName The name of the screen's related subform to include with the main screeen's data
+   * @returns
+   */
+  withRelated(subformName) {
     this.#insideSubform = true;
-    this.#appendParamToUrl(`$expand=${subformName}`);
+    this.#appendParamToUrl("$expand=", subformName);
     return this;
   }
 
   #subselect(selectClause) {
-    this.#appendToUrl("($select=", selectClause, ")");
+    this.#appendParamToUrl("($select=", selectClause, ")");
     return this;
   }
 
   #mainselect(selectClause) {
-    this.#appendParamToUrl(`$select=${selectClause}`);
+    this.#appendParamToUrl("$select=", selectClause);
     return this;
   }
 
@@ -107,6 +138,38 @@ class PriorityClient {
     this.#insideSubform
       ? this.#subselect(selectClause)
       : this.#mainselect(selectClause);
+    return this;
+  }
+
+  /**
+   *
+   * @param {date} time Time to start from
+   */
+  since(time) {
+    this.#appendParamToUrl("$since=", time);
+    return this;
+  }
+
+  /**
+   *
+   * @param {string} field Field used to order entities fetched
+   * @param {'desc'|'asc'} order The order to fetch items
+   */
+  orderBy(field, order) {
+    this.#appendParamToUrl("$orderBy=", `${field} ${order}`);
+    return this;
+  }
+
+  /**
+   *
+   * @param {number} page The page to be fetched
+   * @param {number} size The number of items in that page
+   * @returns
+   */
+  paginate(page = 1, size = 20) {
+    const offset = page - 1 * size;
+    this.#appendToUrl(`$top=${size}`);
+    this.#appendToUrl(`$skip=${offset}`);
     return this;
   }
 
@@ -149,14 +212,14 @@ class PriorityClient {
 }
 
 // *Idea: use Knex query interface as inspiration for the chaining methods
-// TODO 
-// 1.create 'findOne()' method to fetch one entity. It should replace 'where()'
-// 2.create 'where()' method to fetch multple entities. It should replace 'filter()'...
-// ...It can take an object that'll be converted to a query param or [key, equator, value] e.g ('PRICE', 'lt', '50') 
-// 3.create 'with()' method to fetch related entities(subforms). It should replace 'include'
-// 4.create 'since()' method to fetch entities from the provided timestamp
-// 5.create 'orderBy()' method to sort the entities fetched
-// 6.create 'paginate()' method to fetch smaller number of entities at a time
+// TODO
+// *1.create 'findOne()' method to fetch one entity. It should replace 'where()' - DONE✔️
+// *2.create 'where()' method to fetch multple entities. It should replace 'filter()' - DONE✔️
+// *3.create 'withRelated()' method to fetch related entities(subforms). It should replace 'include' - DONE✔️
+// *4.create 'since()' method to fetch entities from the provided timestamp - DONE✔️
+// *5.create 'orderBy()' method to sort the entities fetched - DONE✔️
+// *6.create 'paginate()' method to fetch smaller number of entities at a time - DONE✔️
 // *7.Also... change to existing snake_case naming to camelCase - DONE✔️
+// *8.Add support for logic operators in 'where()' method - DONE✔️
 
 export default PriorityClient;
