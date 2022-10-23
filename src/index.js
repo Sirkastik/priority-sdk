@@ -11,7 +11,7 @@ const fetch = async (url, config) => {
 class PriorityClient {
   #base_url = "";
   #auth = "";
-  #inside_subform = false;
+  #insideSubform = false;
   #url = "";
   #method = "GET";
   #data = null;
@@ -24,7 +24,7 @@ class PriorityClient {
 
   #reset() {
     this.#url = this.#base_url;
-    this.#inside_subform = false;
+    this.#insideSubform = false;
     this.#method = "GET";
     this.#data = null;
   }
@@ -33,80 +33,80 @@ class PriorityClient {
    *
    * @param  {...string} suffixes strings to append to url
    */
-  #append_to_url(...suffixes) {
+  #appendToUrl(...suffixes) {
     this.#url = suffixes.reduce((extension, suffix) => {
       return extension + suffix;
     }, this.#url);
   }
 
-  #convert_object_to_string(object, equator, joiner) {
+  #convertObjectToString(object, equator, joiner) {
     return Object.entries(object)
       .map(([key, value]) => `${key}${equator}'${value}'`)
       .join(joiner);
   }
 
-  #append_param_to_url(param_clause) {
-    const param_prefix = this.#url.includes("?") ? "&" : "?";
-    this.#append_to_url(param_prefix, param_clause);
+  #appendParamToUrl(paramClause) {
+    const paramPrefix = this.#url.includes("?") ? "&" : "?";
+    this.#appendToUrl(paramPrefix, paramClause);
   }
 
   /**
    *
-   * @param {string} screen_name the screen to get the resources from PRIORITY
+   * @param {string} screenName the screen to get the resources from PRIORITY
    */
-  screen(screen_name) {
-    this.#append_to_url("/", screen_name);
+  screen(screenName) {
+    this.#appendToUrl("/", screenName);
     return this;
   }
 
-  where(where_object) {
-    const where_clause = this.#convert_object_to_string(where_object, "=", ",");
-    where_clause && this.#append_to_url("(", where_clause, ")");
+  where(whereObject) {
+    const whereClause = this.#convertObjectToString(whereObject, "=", ",");
+    whereClause && this.#appendToUrl("(", whereClause, ")");
     return this;
   }
 
-  filter(filter_object) {
-    const filters = this.#convert_object_to_string(
-      filter_object,
+  filter(filterObject) {
+    const filters = this.#convertObjectToString(
+      filterObject,
       "+eq+",
       "+and+"
     );
-    filters && this.#append_param_to_url(`$filter=${filters}`);
+    filters && this.#appendParamToUrl(`$filter=${filters}`);
     return this;
   }
 
   /**
    *
-   * @param {string} subform_name The name of the screen's subform to include with the main screeen's data
+   * @param {string} subformName The name of the screen's subform to include with the main screeen's data
    * @returns
    */
-  include(subform_name) {
-    this.#inside_subform = true;
-    this.#append_param_to_url(`$expand=${subform_name}`);
+  include(subformName) {
+    this.#insideSubform = true;
+    this.#appendParamToUrl(`$expand=${subformName}`);
     return this;
   }
 
-  #subselect(select_clause) {
-    this.#append_to_url("($select=", select_clause, ")");
+  #subselect(selectClause) {
+    this.#appendToUrl("($select=", selectClause, ")");
     return this;
   }
 
-  #mainselect(select_clause) {
-    this.#append_param_to_url(`$select=${select_clause}`);
+  #mainselect(selectClause) {
+    this.#appendParamToUrl(`$select=${selectClause}`);
     return this;
   }
 
   /**
    *
-   * @param {string[]} selected_fields field names to select from the resource object
+   * @param {string[]} fieldsToSelect field names to select from the resource object
    * @returns
    */
-  select(selected_fields) {
-    if (!selected_fields.length) return this;
-    const select_clause = selected_fields.join(",");
-    this.#inside_subform
-      ? this.#subselect(select_clause)
-      : this.#mainselect(select_clause);
+  select(fieldsToSelect) {
+    if (!fieldsToSelect.length) return this;
+    const selectClause = fieldsToSelect.join(",");
+    this.#insideSubform
+      ? this.#subselect(selectClause)
+      : this.#mainselect(selectClause);
     return this;
   }
 
@@ -157,6 +157,6 @@ class PriorityClient {
 // 4.create 'since()' method to fetch entities from the provided timestamp
 // 5.create 'orderBy()' method to sort the entities fetched
 // 6.create 'paginate()' method to fetch smaller number of entities at a time
-// 7.Also... change to existing snake_case naming to camelCase
+// *7.Also... change to existing snake_case naming to camelCase - DONE✔️
 
 export default PriorityClient;
