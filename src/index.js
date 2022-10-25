@@ -60,7 +60,6 @@ class PriorityQueryBuilder {
   #paramTree = {};
   #modifiedKey = null;
 
-
   /**
    *
    * Integration Config Object
@@ -71,7 +70,7 @@ class PriorityQueryBuilder {
    * @property {string} password - The password required for auth
    * @property {integer} langId - The language id
    * @property {string} [file='tabula.ini'] - The filename: defaults to 'tabula.ini'
-   * 
+   *
    * @param {Config} configuration The credentials for accessing Priority as well as the options
    */
   constructor({
@@ -286,18 +285,24 @@ class PriorityQueryBuilder {
   }
 
   async get() {
-    return this.#request();
+    return this.request();
   }
 
   async post(data) {
-    return this.#request("POST", data);
+    return this.request("POST", data);
   }
 
   async patch(data) {
-    return this.#request("PATCH", data);
+    return this.request("PATCH", data);
   }
 
-  async #request(method = "GET", data = null) {
+  /**
+   *
+   * @param {string} [method='GET'] The request method
+   * @param {string} [data] The request body
+   * @returns {Promise<any>}
+   */
+  async request(method = "GET", data = null) {
     this.#method = method;
     this.#data = data;
     const response = await fetch(this.#url, this.#config);
