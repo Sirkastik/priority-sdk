@@ -60,6 +60,20 @@ class PriorityQueryBuilder {
   #paramTree = {};
   #modifiedKey = null;
 
+
+  /**
+   *
+   * Integration Config Object
+   * @typedef {Object} Config
+   * @property {string} url - The url
+   * @property {string} company - The company short name
+   * @property {string} username - The username required for auth
+   * @property {string} password - The password required for auth
+   * @property {integer} langId - The language id
+   * @property {string} [file='tabula.ini'] - The filename: defaults to 'tabula.ini'
+   * 
+   * @param {Config} configuration The credentials for accessing Priority as well as the options
+   */
   constructor({
     url,
     company,
@@ -111,7 +125,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to choose the screen where the resources are fetched
    * @param {string} screenName the screen to get the resources from PRIORITY
    */
   screen(screenName) {
@@ -120,7 +134,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to select a subform that exists inside the already chosen screeen
    * @param {string} subformName the subform to get the resources from PRIORITY
    */
   subform(subformName) {
@@ -129,7 +143,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to fetch one entity from the related collection
    * @param {{[key: string]: string}} identifier
    * @returns
    */
@@ -142,7 +156,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to filter entities that match the filters in the collection
    * @param {{[key: string]: string|[equator: string, value:string]}} filters
    * @returns
    */
@@ -153,7 +167,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to include subforms inside the collection data
    * @param {string[]} subforms An array of the screens related subform to include with the main screeen's data
    * @returns
    */
@@ -163,7 +177,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to select the fields fetched in the collection
    * @param {string[]} fieldsToSelect field names to select from the resource object
    * @returns
    */
@@ -175,7 +189,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to fetch items created after a certain date
    * @param {date} time Time to start from
    */
   since(time) {
@@ -184,7 +198,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to sort the entities
    * @param {string} field Field used to order entities fetched
    * @param {'desc'|'asc'} order The order to fetch items
    */
@@ -194,7 +208,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to paginate the response from the API
    * @param {number} page The page to be fetched
    * @param {number} size The number of items in that page
    * @returns
@@ -208,7 +222,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to fetch collection in pages and process the data using a callback for every page
    * @param {number} page The page to be fetched
    * @param {number} size The number of items in that page
    * @param {(items, page) => Promise<void>} callback The callback to process the paginated data
@@ -227,7 +241,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to fetch collection in pages and aggregate it to one array containing the data fetched in all pages
    * @param {number} page The page to be fetched
    * @param {number} size The number of items in that page
    * @param {number} [limit=Infinity] The total number of items to fetch
@@ -249,7 +263,7 @@ class PriorityQueryBuilder {
   }
 
   /**
-   *
+   * Method to modify a subform that was included in the URL
    * @param {string} subformName The name of the subform to be modified
    * @param {(queryBuilder: this) => void} modifierFunction The function insert a subquery for the related subform
    * @returns {this}
@@ -291,6 +305,10 @@ class PriorityQueryBuilder {
     return response;
   }
 
+  /**
+   * Method to debug the URL query string created. It logs the object
+   * @returns this
+   */
   debug() {
     console.log({ url: this.#url, ...this.#config });
     return this;
