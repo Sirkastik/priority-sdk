@@ -74,7 +74,7 @@ class PriorityQueryBuilder {
    * @property {string} password - The password required for auth
    * @property {integer} langId - The language id
    * @property {string} [file='tabula.ini'] - The filename: defaults to 'tabula.ini'
-   *
+   * 
    * @param {Config} configuration The credentials for accessing Priority as well as the options
    */
   constructor({
