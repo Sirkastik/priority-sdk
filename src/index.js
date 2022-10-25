@@ -1,6 +1,8 @@
+const axios = require("axios");
+
 const fetch = async (url, config) => {
   try {
-    const response = await require("axios")({ url, ...config });
+    const response = await axios({ url, ...config });
     return response.data;
   } catch (error) {
     if (!error) throw new Error("An Error Occurred");
@@ -58,8 +60,16 @@ class PriorityQueryBuilder {
   #paramTree = {};
   #modifiedKey = null;
 
-  constructor({ url, company, username, password }) {
-    this.#baseUrl = `${url}/odata/Priority/tabula.ini/${company}`;
+  constructor({
+    url,
+    company,
+    username,
+    password,
+    langId,
+    file = "tabula.ini",
+  }) {
+    const lang = langId ? `,${langId}` : "";
+    this.#baseUrl = `${url}/odata/Priority/${file}${lang}/${company}`;
     this.#auth = Buffer.from(`${username}:${password}`).toString("base64");
   }
 
@@ -169,7 +179,7 @@ class PriorityQueryBuilder {
    * @param {date} time Time to start from
    */
   since(time) {
-    this.#addToParamTree("$since=", { value: time });
+    this.#addToParamTree("$since", { value: time });
     return this;
   }
 
@@ -179,7 +189,7 @@ class PriorityQueryBuilder {
    * @param {'desc'|'asc'} order The order to fetch items
    */
   orderBy(field, order) {
-    this.#addToParamTree("$orderBy=", { value: `${field}+${order}` });
+    this.#addToParamTree("$orderBy", { value: `${field}+${order}` });
     return this;
   }
 
@@ -197,6 +207,14 @@ class PriorityQueryBuilder {
     return response.value;
   }
 
+  /**
+   *
+   * @param {number} page The page to be fetched
+   * @param {number} size The number of items in that page
+   * @param {(items, page) => Promise<void>} callback The callback to process the paginated data
+   * @param {number} [limit=Infinity] The total number of items to fetch
+   * @returns {Promise<void>}
+   */
   async paginateAction(page, size, callback, limit = Infinity) {
     let data = [];
     let totalLength = 0;
@@ -208,16 +226,24 @@ class PriorityQueryBuilder {
     } while (data.length && totalLength < limit);
   }
 
+  /**
+   *
+   * @param {number} page The page to be fetched
+   * @param {number} size The number of items in that page
+   * @param {number} [limit=Infinity] The total number of items to fetch
+   * @returns {Promise<any[]>}
+   */
   async paginateAndCollect(page, size, limit = Infinity) {
     const data = [];
     let totalLength = 0;
     do {
       const response = await this.paginate(page, size);
-      data.push(response);
+      data.push(...response);
       totalLength += data.length;
       console.log(
         `PAGE::${page} SIZE::${size} RESPONSE SIZE::${response.length}`
       );
+      page++;
     } while (data.length && totalLength < limit);
     return data;
   }
@@ -225,7 +251,7 @@ class PriorityQueryBuilder {
   /**
    *
    * @param {string} subformName The name of the subform to be modified
-   * @param {(queryBuilder: this) => string} modifierFunction The function insert a subquery for the related subform
+   * @param {(queryBuilder: this) => void} modifierFunction The function insert a subquery for the related subform
    * @returns {this}
    */
   modifyRelated(subformName, modifierFunction) {
@@ -235,58 +261,40 @@ class PriorityQueryBuilder {
     return this;
   }
 
-  get config() {
+  get #config() {
     let Authorization = `Basic ${this.#auth}`;
     const headers = { Authorization, "Content-Type": "application/json" };
     return { method: this.#method, headers, data: this.#data };
   }
 
-  get url() {
+  get #url() {
     return new URL(urlObjToStr(this.#paramTree, this.#baseUrl)).toString();
   }
 
   async get() {
-    const response = await fetch(this.url, this.config);
-    this.#reset();
-    return response;
+    return this.#request();
   }
 
   async post(data) {
-    this.#method = "POST";
-    this.#data = data;
-    const response = await fetch(this.url, this.config);
-    this.#reset();
-    return response;
+    return this.#request("POST", data);
   }
 
   async patch(data) {
-    this.#method = "PATCH";
+    return this.#request("PATCH", data);
+  }
+
+  async #request(method = "GET", data = null) {
+    this.#method = method;
     this.#data = data;
-    const response = await fetch(this.url, this.config);
+    const response = await fetch(this.#url, this.#config);
     this.#reset();
     return response;
   }
 
   debug() {
-    console.log({ url: this.url, ...this.config });
+    console.log({ url: this.#url, ...this.#config });
     return this;
   }
 }
 
-const config = {
-  url: "https://www.eshbelsaas.com/ui",
-  company: "usdemo",
-  username: "apidemo",
-  password: "123",
-};
-
-new PriorityQueryBuilder(config)
-  .screen("ORDERS")
-  .findOne({ CUSTNAME: "345687", CNUM: 12 })
-  .withRelated(["CUSTOMERS_SUBFORM", "ORDERITEMS_SUBFORM", "SHIPPING_SUBFORM"])
-  .modifyRelated("ORDERITEMS_SUBFORM", (qb) =>
-    qb.select(["PARTNAME", "QPRICE", "TQUANT"]).where({ QPRICE: ["gt", 20] })
-  )
-  .debug();
-
-export default PriorityQueryBuilder;
+module.exports = PriorityQueryBuilder;
