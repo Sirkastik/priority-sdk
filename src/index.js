@@ -1,6 +1,8 @@
+const axios = require("axios");
+
 const fetch = async (url, config) => {
   try {
-    const response = await require("axios")({ url, ...config });
+    const response = await axios({ url, ...config });
     return response.data;
   } catch (error) {
     if (!error) throw new Error("An Error Occurred");
@@ -8,44 +10,74 @@ const fetch = async (url, config) => {
   }
 };
 
-class PriorityClient {
-  #base_url = "";
+const objEntries = Object.entries;
+
+const modObjToStr = (paramModifiers, isParameter = true) => {
+  return objEntries(paramModifiers)
+    .map(([key, { value }]) => `${key}=${value}`)
+    .join(isParameter ? ";" : ",");
+};
+
+const insertModifiers = ({ value, modifiers }) => {
+  return objEntries(modifiers)
+    .filter(([key]) => value.includes(key))
+    .reduce((modValue, [key, modSubkeys]) => {
+      const joiner = `${key}(${modObjToStr(modSubkeys)})`;
+      return modValue.split(key).join(joiner);
+    }, value);
+};
+
+const urlObjToStr = (paramObj, baseUrl) => {
+  return objEntries(paramObj).reduce((url, [key, { value, modifiers }]) => {
+    const isParameter = key.includes("$");
+    if (!isParameter) {
+      url += "/";
+      url += value;
+      if (!modifiers) return url;
+      const _value = modifiers
+        ? `(${modObjToStr(modifiers, isParameter)})`
+        : "";
+      url += _value;
+    } else {
+      url += url.includes("?") ? "&" : "?";
+      url += key;
+      url += "=";
+      if (key === "$expand" && modifiers) {
+        url += insertModifiers({ value, modifiers });
+      } else {
+        url += value;
+      }
+    }
+    return url;
+  }, baseUrl);
+};
+
+class PriorityQueryBuilder {
+  #baseUrl = "";
   #auth = "";
-  #insideSubform = false;
-  #url = "";
   #method = "GET";
   #data = null;
+  #paramTree = {};
+  #modifiedKey = null;
 
-  constructor({ url, company, username, password }) {
-    this.#base_url = `${url}/odata/Priority/tabula.ini/${company}`;
+  constructor({
+    url,
+    company,
+    username,
+    password,
+    langId,
+    file = "tabula.ini",
+  }) {
+    const lang = langId ? `,${langId}` : "";
+    this.#baseUrl = `${url}/odata/Priority/${file}${lang}/${company}`;
     this.#auth = Buffer.from(`${username}:${password}`).toString("base64");
-    this.#url = this.#base_url;
   }
 
   #reset() {
-    this.#url = this.#base_url;
-    this.#insideSubform = false;
+    this.#paramTree = {};
     this.#method = "GET";
     this.#data = null;
-  }
-
-  /**
-   *
-   * @param  {...string} suffixes strings to append to url
-   */
-  #appendToUrl(...suffixes) {
-    this.#url = suffixes.reduce((extension, suffix) => {
-      return extension + suffix;
-    }, this.#url);
-  }
-
-  /**
-   *
-   * @param  {...string} params param strings to append to url
-   */
-  #appendParamToUrl(...params) {
-    const prefix = this.#url.includes("?") ? "&" : "?";
-    this.#appendToUrl(prefix, ...params);
+    this.#modifiedKey = null;
   }
 
   /**
@@ -66,12 +98,24 @@ class PriorityClient {
       .join(joiner);
   }
 
+  #addToParamTree(paramKey, paramObject, parent) {
+    if (this.#modifiedKey && !parent) parent = "$expand";
+    let target = parent ? this.#paramTree[parent] : this.#paramTree;
+    if (parent && !target.modifiers) target.modifiers = {};
+    target = parent ? target.modifiers : target;
+    if (this.#modifiedKey) {
+      if (!target[this.#modifiedKey]) target[this.#modifiedKey] = {};
+      target = target[this.#modifiedKey];
+    }
+    target[paramKey] = paramObject;
+  }
+
   /**
    *
    * @param {string} screenName the screen to get the resources from PRIORITY
    */
   screen(screenName) {
-    this.#appendToUrl("/", screenName);
+    this.#addToParamTree("screen", { value: screenName });
     return this;
   }
 
@@ -80,7 +124,7 @@ class PriorityClient {
    * @param {string} subformName the subform to get the resources from PRIORITY
    */
   subform(subformName) {
-    this.#appendToUrl("/", subformName);
+    this.#addToParamTree("subform", { value: subformName });
     return this;
   }
 
@@ -90,8 +134,10 @@ class PriorityClient {
    * @returns
    */
   findOne(identifier) {
-    const searchClause = this.#convertObjectToString(identifier, "=", ",");
-    searchClause && this.#appendToUrl("(", searchClause, ")");
+    const parent = this.#paramTree.subform ? "subform" : "screen";
+    objEntries(identifier).map(([key, value]) => {
+      this.#addToParamTree(key, { value }, parent);
+    });
     return this;
   }
 
@@ -101,29 +147,18 @@ class PriorityClient {
    * @returns
    */
   where(filters) {
-    const whereClause = this.#convertObjectToString(filters, "+eq+", "+and+");
-    whereClause && this.#appendParamToUrl("$filter=", whereClause);
+    const value = this.#convertObjectToString(filters, "+eq+", "+and+");
+    this.#addToParamTree("$filter", { value });
     return this;
   }
 
   /**
    *
-   * @param {string} subformName The name of the screen's related subform to include with the main screeen's data
+   * @param {string[]} subforms An array of the screens related subform to include with the main screeen's data
    * @returns
    */
-  withRelated(subformName) {
-    this.#insideSubform = true;
-    this.#appendParamToUrl("$expand=", subformName);
-    return this;
-  }
-
-  #subselect(selectClause) {
-    this.#appendParamToUrl("($select=", selectClause, ")");
-    return this;
-  }
-
-  #mainselect(selectClause) {
-    this.#appendParamToUrl("$select=", selectClause);
+  withRelated(subforms) {
+    this.#addToParamTree("$expand", { value: subforms.join(",") });
     return this;
   }
 
@@ -134,10 +169,8 @@ class PriorityClient {
    */
   select(fieldsToSelect) {
     if (!fieldsToSelect.length) return this;
-    const selectClause = fieldsToSelect.join(",");
-    this.#insideSubform
-      ? this.#subselect(selectClause)
-      : this.#mainselect(selectClause);
+    const value = fieldsToSelect.join(",");
+    this.#addToParamTree("$select", { value });
     return this;
   }
 
@@ -146,7 +179,7 @@ class PriorityClient {
    * @param {date} time Time to start from
    */
   since(time) {
-    this.#appendParamToUrl("$since=", time);
+    this.#addToParamTree("$since", { value: time });
     return this;
   }
 
@@ -156,7 +189,7 @@ class PriorityClient {
    * @param {'desc'|'asc'} order The order to fetch items
    */
   orderBy(field, order) {
-    this.#appendParamToUrl("$orderBy=", `${field} ${order}`);
+    this.#addToParamTree("$orderBy", { value: `${field}+${order}` });
     return this;
   }
 
@@ -166,60 +199,102 @@ class PriorityClient {
    * @param {number} size The number of items in that page
    * @returns
    */
-  paginate(page = 1, size = 20) {
-    const offset = page - 1 * size;
-    this.#appendToUrl(`$top=${size}`);
-    this.#appendToUrl(`$skip=${offset}`);
+  async paginate(page = 1, size = 20) {
+    const offset = (page - 1) * size;
+    this.#addToParamTree("$top", { value: size });
+    this.#addToParamTree("$skip", { value: offset });
+    const response = await fetch(this.url, this.config);
+    return response.value;
+  }
+
+  /**
+   *
+   * @param {number} page The page to be fetched
+   * @param {number} size The number of items in that page
+   * @param {(items, page) => Promise<void>} callback The callback to process the paginated data
+   * @param {number} [limit=Infinity] The total number of items to fetch
+   * @returns {Promise<void>}
+   */
+  async paginateAction(page, size, callback, limit = Infinity) {
+    let data = [];
+    let totalLength = 0;
+    do {
+      data = await this.paginate(page, size);
+      totalLength += data.length;
+      console.log(`PAGE::${page} SIZE::${size} RESPONSE SIZE::${data.length}`);
+      await callback(data, page);
+    } while (data.length && totalLength < limit);
+  }
+
+  /**
+   *
+   * @param {number} page The page to be fetched
+   * @param {number} size The number of items in that page
+   * @param {number} [limit=Infinity] The total number of items to fetch
+   * @returns {Promise<any[]>}
+   */
+  async paginateAndCollect(page, size, limit = Infinity) {
+    const data = [];
+    let totalLength = 0;
+    do {
+      const response = await this.paginate(page, size);
+      data.push(...response);
+      totalLength += data.length;
+      console.log(
+        `PAGE::${page} SIZE::${size} RESPONSE SIZE::${response.length}`
+      );
+      page++;
+    } while (data.length && totalLength < limit);
+    return data;
+  }
+
+  /**
+   *
+   * @param {string} subformName The name of the subform to be modified
+   * @param {(queryBuilder: this) => void} modifierFunction The function insert a subquery for the related subform
+   * @returns {this}
+   */
+  modifyRelated(subformName, modifierFunction) {
+    this.#modifiedKey = subformName;
+    modifierFunction.bind(this)(this);
+    this.#modifiedKey = null;
     return this;
   }
 
-  get config() {
+  get #config() {
     let Authorization = `Basic ${this.#auth}`;
     const headers = { Authorization, "Content-Type": "application/json" };
     return { method: this.#method, headers, data: this.#data };
   }
 
-  get url() {
-    return new URL(this.#url).toString();
+  get #url() {
+    return new URL(urlObjToStr(this.#paramTree, this.#baseUrl)).toString();
   }
 
   async get() {
-    const response = await fetch(this.url, this.config);
-    this.#reset();
-    return response;
+    return this.#request();
   }
 
   async post(data) {
-    this.#method = "POST";
-    this.#data = data;
-    const response = await fetch(this.url, this.config);
-    this.#reset();
-    return response;
+    return this.#request("POST", data);
   }
 
   async patch(data) {
-    this.#method = "PATCH";
+    return this.#request("PATCH", data);
+  }
+
+  async #request(method = "GET", data = null) {
+    this.#method = method;
     this.#data = data;
-    const response = await fetch(this.url, this.config);
+    const response = await fetch(this.#url, this.#config);
     this.#reset();
     return response;
   }
 
   debug() {
-    console.log({ url: this.url, ...this.config });
+    console.log({ url: this.#url, ...this.#config });
     return this;
   }
 }
 
-// *Idea: use Knex query interface as inspiration for the chaining methods
-// TODO
-// *1.create 'findOne()' method to fetch one entity. It should replace 'where()' - DONE✔️
-// *2.create 'where()' method to fetch multple entities. It should replace 'filter()' - DONE✔️
-// *3.create 'withRelated()' method to fetch related entities(subforms). It should replace 'include' - DONE✔️
-// *4.create 'since()' method to fetch entities from the provided timestamp - DONE✔️
-// *5.create 'orderBy()' method to sort the entities fetched - DONE✔️
-// *6.create 'paginate()' method to fetch smaller number of entities at a time - DONE✔️
-// *7.Also... change to existing snake_case naming to camelCase - DONE✔️
-// *8.Add support for logic operators in 'where()' method - DONE✔️
-
-export default PriorityClient;
+module.exports = PriorityQueryBuilder;
