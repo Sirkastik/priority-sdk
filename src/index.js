@@ -10,6 +10,10 @@ const fetch = async (url, config) => {
   }
 };
 
+const checkUndefined = (...args) => {
+  return args.some((arg) => arg === undefined);
+};
+
 const objEntries = Object.entries;
 
 const modObjToStr = (paramModifiers, isParameter = true) => {
@@ -70,7 +74,7 @@ class PriorityQueryBuilder {
    * @property {string} password - The password required for auth
    * @property {integer} langId - The language id
    * @property {string} [file='tabula.ini'] - The filename: defaults to 'tabula.ini'
-   * 
+   *
    * @param {Config} configuration The credentials for accessing Priority as well as the options
    */
   constructor({
@@ -81,6 +85,8 @@ class PriorityQueryBuilder {
     langId,
     file = "tabula.ini",
   }) {
+    if (checkUndefined(url, company, username, password))
+      throw Error("Please pass the necessary input");
     const lang = langId ? `,${langId}` : "";
     this.#baseUrl = `${url}/odata/Priority/${file}${lang}/${company}`;
     this.#auth = Buffer.from(`${username}:${password}`).toString("base64");
@@ -101,12 +107,13 @@ class PriorityQueryBuilder {
    * @returns {string}
    */
   #convertObjectToString(object, equator, joiner) {
+    const getVal = (val) => (typeof val === "string" ? `'${val}'` : val);
     return Object.entries(object)
       .map(([key, value]) => {
         if (Array.isArray(value)) {
-          return `${key}${value[0]}'${value[1]}'`;
+          return `${key}${value[0]}${getVal(value[1])}`;
         }
-        return `${key}${equator}'${value}'`;
+        return `${key}${equator}${getVal(value)}`;
       })
       .join(joiner);
   }
@@ -128,6 +135,7 @@ class PriorityQueryBuilder {
    * @param {string} screenName the screen to get the resources from PRIORITY
    */
   screen(screenName) {
+    this.#reset();
     this.#addToParamTree("screen", { value: screenName });
     return this;
   }
@@ -280,7 +288,7 @@ class PriorityQueryBuilder {
     return { method: this.#method, headers, data: this.#data };
   }
 
-  get #url() {
+  get url() {
     return new URL(urlObjToStr(this.#paramTree, this.#baseUrl)).toString();
   }
 
@@ -305,7 +313,7 @@ class PriorityQueryBuilder {
   async request(method = "GET", data = null) {
     this.#method = method;
     this.#data = data;
-    const response = await fetch(this.#url, this.#config);
+    const response = await fetch(this.url, this.#config);
     this.#reset();
     return response;
   }
@@ -315,7 +323,8 @@ class PriorityQueryBuilder {
    * @returns this
    */
   debug() {
-    console.log({ url: this.#url, ...this.#config });
+    console.log({ url: this.url, ...this.#config });
+    console.log(this.#paramTree);
     return this;
   }
 }
