@@ -14,6 +14,8 @@ const checkUndefined = (...args) => {
   return args.some((arg) => arg === undefined);
 };
 
+const denoteString = (val) => (typeof val === "string" ? `'${val}'` : val);
+
 const objEntries = Object.entries;
 
 const modObjToStr = (paramModifiers, isParameter = true) => {
@@ -107,13 +109,12 @@ class PriorityQueryBuilder {
    * @returns {string}
    */
   #convertObjectToString(object, equator, joiner) {
-    const getVal = (val) => (typeof val === "string" ? `'${val}'` : val);
     return Object.entries(object)
       .map(([key, value]) => {
         if (Array.isArray(value)) {
-          return `${key}${value[0]}${getVal(value[1])}`;
+          return `${key}${value[0]}${denoteString(value[1])}`;
         }
-        return `${key}${equator}${getVal(value)}`;
+        return `${key}${equator}${denoteString(value)}`;
       })
       .join(joiner);
   }
@@ -157,7 +158,7 @@ class PriorityQueryBuilder {
   findOne(identifier) {
     const parent = this.#paramTree.subform ? "subform" : "screen";
     objEntries(identifier).map(([key, value]) => {
-      this.#addToParamTree(key, { value }, parent);
+      this.#addToParamTree(key, { value: denoteString(value) }, parent);
     });
     return this;
   }
@@ -224,7 +225,7 @@ class PriorityQueryBuilder {
     const offset = (page - 1) * size;
     this.#addToParamTree("$top", { value: size });
     this.#addToParamTree("$skip", { value: offset });
-    const response = await fetch(this.url, this.config);
+    const response = await fetch(this.url, this.#config);
     return response.value;
   }
 
@@ -234,7 +235,7 @@ class PriorityQueryBuilder {
    * @param {number} size The number of items in that page
    * @param {(items, page) => Promise<void>} callback The callback to process the paginated data
    * @param {number} [limit=Infinity] The total number of items to fetch
-   * @returns {Promise<void>}
+   * @returns {Promise<number>}
    */
   async paginateAction(page, size, callback, limit = Infinity) {
     let data = [];
@@ -242,31 +243,9 @@ class PriorityQueryBuilder {
     do {
       data = await this.paginate(page, size);
       totalLength += data.length;
-      console.log(`PAGE::${page} SIZE::${size} RESPONSE SIZE::${data.length}`);
       await callback(data, page);
     } while (data.length && totalLength < limit);
-  }
-
-  /**
-   * Method to fetch collection in pages and aggregate it to one array containing the data fetched in all pages
-   * @param {number} page The page to be fetched
-   * @param {number} size The number of items in that page
-   * @param {number} [limit=Infinity] The total number of items to fetch
-   * @returns {Promise<any[]>}
-   */
-  async paginateAndCollect(page, size, limit = Infinity) {
-    const data = [];
-    let totalLength = 0;
-    do {
-      const response = await this.paginate(page, size);
-      data.push(...response);
-      totalLength += data.length;
-      console.log(
-        `PAGE::${page} SIZE::${size} RESPONSE SIZE::${response.length}`
-      );
-      page++;
-    } while (data.length && totalLength < limit);
-    return data;
+    return totalLength;
   }
 
   /**
@@ -283,7 +262,7 @@ class PriorityQueryBuilder {
   }
 
   get #config() {
-    let Authorization = `Basic ${this.#auth}`;
+    const Authorization = `Basic ${this.#auth}`;
     const headers = { Authorization, "Content-Type": "application/json" };
     return { method: this.#method, headers, data: this.#data };
   }
@@ -324,7 +303,7 @@ class PriorityQueryBuilder {
    */
   debug() {
     console.log({ url: this.url, ...this.#config });
-    console.log(this.#paramTree);
+    console.log(require("util").inspect(this.#paramTree, false, null, true));
     return this;
   }
 }

@@ -4,7 +4,7 @@
   "description": "Priority ERP JavaScript SDK",
   "main": "index.js",
   "scripts": {
-    "test": "jest --coverage"
+    "test": "jest --coverage --detectOpenHandles"
   },
   "repository": {
     "type": "git",

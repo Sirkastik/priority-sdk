@@ -52,7 +52,7 @@ const fetchAllUrl = concat(BASE_URL, slash, screen);
 
 const ORDNAME = "SO17000001";
 
-const findOneUrl = concat(fetchAllUrl, "(ORDNAME=", ORDNAME, ")");
+const findOneUrl = concat(fetchAllUrl, "(ORDNAME=", `'${ORDNAME}'`, ")");
 
 const subform = "ORDERITEMS_SUBFORM";
 
@@ -99,10 +99,14 @@ const selectCollectionUrl = toURL(
 );
 
 const complexQueryUrl = toURL(
-  "https://www.eshbelsaas.com/ui/odata/Priority/tabmob.ini/usdemo/ORDERS?$filter=CUSTNAME+eq+'T000001'&$expand=ORDERITEMS_SUBFORM($filter=PRICE+gt+3;$select=CHARGEIV,KLINE,PARTNAME,PDES,TQUANT,PRICE;$expand=ORDISTATUSLOG_SUBFORM),SHIPTO2_SUBFORM,ORDERSTEXT_SUBFORM&$select=CUSTNAME,CDES,ORDNAME"
+  "https://www.eshbelsaas.com/ui/odata/Priority/tabmob.ini/usdemo/ORDERS?$filter=CUSTNAME+eq+'T000001'&$expand=ORDERITEMS_SUBFORM($filter=PRICE+gt+3;$select=KLINE,PARTNAME,PDES,TQUANT,PRICE;$expand=ORDISTATUSLOG_SUBFORM),SHIPTO2_SUBFORM,ORDERSTEXT_SUBFORM&$select=CUSTNAME,CDES,ORDNAME"
 );
 
 /** BEGINNING OF TESTS */
+
+test("throw error if not credentials passed", () => {
+  expect(() => new QueryBuilder({})).toThrow("Please pass the necessary input");
+});
 
 test("correct base url", () => {
   expect(builder.url).toBe(BASE_URL);
@@ -171,9 +175,45 @@ test("combined complex query url", () => {
       .modifyRelated("ORDERITEMS_SUBFORM", (qb) =>
         qb
           .where({ PRICE: [gt, 3] })
-          .select(["CHARGEIV", "KLINE", "PARTNAME", "PDES", "TQUANT", "PRICE"])
+          .select(["KLINE", "PARTNAME", "PDES", "TQUANT", "PRICE"])
           .withRelated(["ORDISTATUSLOG_SUBFORM"])
       )
       .select(["CUSTNAME", "CDES", "ORDNAME"]).url
   ).toBe(complexQueryUrl);
+});
+
+test("pagination and collection works", async () => {
+  try {
+    const page = 1;
+    const size = 3;
+    const limit = 3;
+    const outputLength = await builder
+      .screen(screen)
+      .paginateAction(page, size, (_) => _, limit);
+    expect(outputLength).toBe(limit);
+  } catch (message) {
+    return console.error(message);
+  }
+});
+
+test("[GET] method works", async () => {
+  try {
+    const { CDES } = await builder.screen(screen).findOne({ ORDNAME }).get();
+    expect(CDES).toBe("Wanda D. Holding");
+  } catch (message) {
+    return console.error(message);
+  }
+});
+
+test("request with manual method  works", async () => {
+  try {
+    const { value } = await builder
+      .screen(screen)
+      .findOne({ ORDNAME })
+      .subform(subform)
+      .request("GET");
+    expect(value[0].PARTNAME).toBe("TR0003");
+  } catch (message) {
+    return console.error(message);
+  }
 });
