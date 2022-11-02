@@ -1,6 +1,6 @@
 {
   "name": "priority-erp-sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Priority ERP JavaScript SDK",
   "main": "./src/index.js",
   "scripts": {
