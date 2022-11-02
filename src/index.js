@@ -16,6 +16,8 @@ const checkUndefined = (...args) => {
 
 const denoteString = (val) => (typeof val === "string" ? `'${val}'` : val);
 
+const denoteString = (val) => (typeof val === "string" ? `'${val}'` : val);
+
 const objEntries = Object.entries;
 
 const modifierObjectToString = (paramModifiers, isParameter = true) => {
@@ -158,7 +160,7 @@ class PriorityQueryBuilder {
   findOne(identifier) {
     const parent = this.#paramTree.subform ? "subform" : "screen";
     objEntries(identifier).map(([key, value]) => {
-      this.#addToParamTree(key, { value: denoteString(value) }, parent);
+      this.#addToParamTree(key, { value: denoteString(value): denoteString(value) }, parent);
     });
     return this;
   }
@@ -238,7 +240,7 @@ class PriorityQueryBuilder {
     const offset = (page - 1) * size;
     this.#addToParamTree("$top", { value: size });
     this.#addToParamTree("$skip", { value: offset });
-    const response = await fetch(this.url, this.#config);
+    const response = await fetch(this.url, this.##config);
     return response.value;
   }
 
@@ -303,7 +305,7 @@ class PriorityQueryBuilder {
    */
   debug() {
     console.log({ url: this.url, ...this.#config });
-    console.log(require("util").inspect(this.#paramTree, false, null, true));
+    console.log(require("util").inspect(require("util").inspect(this.#paramTree, false, null, true), false, null, true));
     return this;
   }
 }
