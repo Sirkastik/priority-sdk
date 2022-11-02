@@ -1,8 +1,8 @@
 {
   "name": "priority-erp-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Priority ERP JavaScript SDK",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
     "test": "jest --coverage --detectOpenHandles"
   },
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/Sirkastik/priority-sdk.git"
   },
-  "keywords": [],
+  "keywords": ["priority", "priority erp", "priority sdk"],
   "author": "Sirkastik",
   "license": "ISC",
   "bugs": {

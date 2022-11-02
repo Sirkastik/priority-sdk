@@ -18,7 +18,7 @@ const denoteString = (val) => (typeof val === "string" ? `'${val}'` : val);
 
 const objEntries = Object.entries;
 
-const modObjToStr = (paramModifiers, isParameter = true) => {
+const modifierObjectToString = (paramModifiers, isParameter = true) => {
   return objEntries(paramModifiers)
     .map(([key, { value }]) => `${key}=${value}`)
     .join(isParameter ? ";" : ",");
@@ -27,8 +27,8 @@ const modObjToStr = (paramModifiers, isParameter = true) => {
 const insertModifiers = ({ value, modifiers }) => {
   return objEntries(modifiers)
     .filter(([key]) => value.includes(key))
-    .reduce((modValue, [key, modSubkeys]) => {
-      const joiner = `${key}(${modObjToStr(modSubkeys)})`;
+    .reduce((modValue, [key, modifiyingClause]) => {
+      const joiner = `${key}(${modifierObjectToString(modifiyingClause)})`;
       return modValue.split(key).join(joiner);
     }, value);
 };
@@ -41,7 +41,7 @@ const urlObjToStr = (paramObj, baseUrl) => {
       url += value;
       if (!modifiers) return url;
       const _value = modifiers
-        ? `(${modObjToStr(modifiers, isParameter)})`
+        ? `(${modifierObjectToString(modifiers, isParameter)})`
         : "";
       url += _value;
     } else {
@@ -74,7 +74,7 @@ class PriorityQueryBuilder {
    * @property {string} company - The company short name
    * @property {string} username - The username required for auth
    * @property {string} password - The password required for auth
-   * @property {integer} langId - The language id
+   * @property {number} langId - The language id
    * @property {string} [file='tabula.ini'] - The filename: defaults to 'tabula.ini'
    *
    * @param {Config} configuration The credentials for accessing Priority as well as the options
@@ -185,6 +185,19 @@ class PriorityQueryBuilder {
   }
 
   /**
+   * Method to modify a subform that was included in the URL
+   * @param {string} subformName The name of the subform to be modified
+   * @param {(queryBuilder: this) => void} modifierFunction The function insert a subquery for the related subform
+   * @returns {this}
+   */
+  modifyRelated(subformName, modifierFunction) {
+    this.#modifiedKey = subformName;
+    modifierFunction.bind(this)(this);
+    this.#modifiedKey = null;
+    return this;
+  }
+
+  /**
    * Method to select the fields fetched in the collection
    * @param {string[]} fieldsToSelect field names to select from the resource object
    * @returns
@@ -246,19 +259,6 @@ class PriorityQueryBuilder {
       await callback(data, page);
     } while (data.length && totalLength < limit);
     return totalLength;
-  }
-
-  /**
-   * Method to modify a subform that was included in the URL
-   * @param {string} subformName The name of the subform to be modified
-   * @param {(queryBuilder: this) => void} modifierFunction The function insert a subquery for the related subform
-   * @returns {this}
-   */
-  modifyRelated(subformName, modifierFunction) {
-    this.#modifiedKey = subformName;
-    modifierFunction.bind(this)(this);
-    this.#modifiedKey = null;
-    return this;
   }
 
   get #config() {
