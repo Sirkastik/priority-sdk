@@ -1,6 +1,6 @@
 {
   "name": "priority-tsdk",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "Priority ERP Typescript SDK",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
