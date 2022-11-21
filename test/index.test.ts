@@ -222,7 +222,7 @@ describe('builder creates url properly', () => {
 });
 
 describe('it fetches from API', () => {
-  it('paginates and collects', async () => {
+  it.concurrent('paginates and collects', async () => {
     try {
       const page = 1;
       const size = 3;
@@ -236,7 +236,7 @@ describe('it fetches from API', () => {
     }
   });
 
-  it('executes [GET] method', async () => {
+  it.concurrent('executes [GET] method', async () => {
     try {
       const CUST = await builder
         .screen(screen)
@@ -248,7 +248,7 @@ describe('it fetches from API', () => {
     }
   });
 
-  it('supports request with manual method', async () => {
+  it.concurrent('supports request with manual method', async () => {
     try {
       const { value } = await builder
         .screen(screen)
