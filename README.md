@@ -30,51 +30,51 @@ const data = await apiClient
 Fetch a collection along with its related subform:
 
 ```js
-const Client = require("priority-tsdk");
+const Client = require('priority-tsdk');
 
 const apiClient = new Client({ url, username, password });
 
 // URL : {{baseUrl}}/ORDERS?$expand=ORDERITEMS_SUBFORM
 
 const data = await apiClient
-  .screen("ORDERS")
-  .where({ CUSTNAME: "T000001" })
-  .withRelated(["ORDERITEMS_SUBFORM"])
+  .screen('ORDERS')
+  .where({ CUSTNAME: 'T000001' })
+  .withRelated(['ORDERITEMS_SUBFORM'])
   .get();
 ```
 
 Paginate a collection:
 
 ```js
-const Client = require("priority-tsdk");
+const Client = require('priority-tsdk');
 
 const apiClient = new Client({ url, username, password });
 
 // URL : {{baseUrl}}/LOGPART?$top={{size}}&$skip${{offset}}
 
-const data = await apiClient.screen("LOGPART").paginate(page, size);
+const data = await apiClient.screen('LOGPART').paginate(page, size);
 ```
 
 Combining the operators for a complex query:
 
 ```js
-const Client = require("priority-tsdk");
+const Client = require('priority-tsdk');
 
 const apiClient = new Client({ url, username, password });
 
 // URL: {{baseUrl}}/ORDERS?$filter=CUSTNAME+eq+'T000001'&$expand=ORDERITEMS_SUBFORM($filter=PRICE+gt+3;$select=KLINE,PARTNAME,PDES,TQUANT,PRICE;$expand=ORDISTATUSLOG_SUBFORM),SHIPTO2_SUBFORM,ORDERSTEXT_SUBFORM&$select=CUSTNAME,CDES,ORDNAME
 
 const data = await apiClient
-  .screen("ORDERS")
-  .where({ CUSTNAME: "T000001" })
-  .withRelated(["ORDERITEMS_SUBFORM", "SHIPTO2_SUBFORM", "ORDERSTEXT_SUBFORM"])
-  .modifyRelated("ORDERITEMS_SUBFORM", (queryBuilder) => {
+  .screen('ORDERS')
+  .where({ CUSTNAME: 'T000001' })
+  .withRelated(['ORDERITEMS_SUBFORM', 'SHIPTO2_SUBFORM', 'ORDERSTEXT_SUBFORM'])
+  .modifyRelated('ORDERITEMS_SUBFORM', queryBuilder => {
     queryBuilder
-      .where({ PRICE: ["gt", 3] })
-      .select(["KLINE", "PARTNAME", "PDES", "TQUANT", "PRICE"])
-      .withRelated(["ORDISTATUSLOG_SUBFORM"]);
+      .where({ PRICE: ['gt', 3] })
+      .select(['KLINE', 'PARTNAME', 'PDES', 'TQUANT', 'PRICE'])
+      .withRelated(['ORDISTATUSLOG_SUBFORM']);
   })
-  .select(["CUSTNAME", "CDES", "ORDNAME"])
+  .select(['CUSTNAME', 'CDES', 'ORDNAME'])
   .get();
 ```
 
@@ -82,12 +82,7 @@ const data = await apiClient
 
 ## Methods
 
-- (**constructor**)(config) - Creates and returns a new Priority client instance. Valid config properties:
-
-  - url - string - The company url to access Priority. Default: (none)
-  - company - string - The company short name that should be accessed using the API. Default: (none)
-  - username - string - The username used to access Priority Default: (none)
-  - password - string - The password used to access Priority Default: (none)
+- (**constructor**)(< string >url, < string >username, < string >password) - Creates and returns a new Priority client instance.
 
 - **screen**(< string >screenName) - (< PriorityClient >) - Sets the screen(collection) where the resources are fetched.
 
@@ -101,7 +96,7 @@ const data = await apiClient
 
   ```js
   const filters = { PRICE: 50 }; // PRICE+eq+50
-  const logicalFilters = { PRICE: ["gt", 50] }; // PRICE+gt+50
+  const logicalFilters = { PRICE: ['gt', 50] }; // PRICE+gt+50
   ```
 
 - **withRelated**(< string[] >subforms) - (< PriorityClient >) - Includes subform data inside the related collection data
@@ -125,5 +120,3 @@ const data = await apiClient
 - **paginate**(< number >page, < number >size) - (Promise< any[] >) - Paginates the response from the API
 
 - **paginateAction**(< number >page, < number >size, callback, limit) - (Promise< any[] >) - Paginates the response from the API and calls the callback passing the response as params. The `limit` is used to set the collective maximum number of entities that should fetched from the API: defaults to `Infinity`.
-
-- **debug**(< number >page, < number >size) - (void) - Logs the param tree constructed by the api along with the config. Used for debugging
