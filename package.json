@@ -9,7 +9,7 @@
     "src"
   ],
   "engines": {
-    "node": ">=10"
+    "node": ">=12.17.0"
   },
   "scripts": {
     "start": "tsdx watch",
@@ -23,7 +23,11 @@
     "type": "git",
     "url": "git+https://github.com/Sirkastik/priority-sdk.git"
   },
-  "keywords": ["priority", "priority erp", "priority sdk"],
+  "keywords": [
+    "priority",
+    "priority erp",
+    "priority sdk"
+  ],
   "author": "Sirkastik",
   "license": "MIT",
   "bugs": {
