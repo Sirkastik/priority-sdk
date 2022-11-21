@@ -1,4 +1,4 @@
-# Priority ERP JavaScript SDK
+# Priority ERP Typescript SDK
 
 # Description
 
@@ -7,7 +7,7 @@ This repository serves as a base for code and documentation relating to Priority
 # Install
 
 ```
-npm i priority-erp-sdk
+npm i priority-tsdk
 ```
 
 # Examples
@@ -15,7 +15,7 @@ npm i priority-erp-sdk
 Filtering a collection with logic operators:
 
 ```js
-const Client = require("priority-erp-sdk");
+const Client = require("priority-tsdk");
 
 const apiClient = new Client({ url, username, password });
 
@@ -30,7 +30,7 @@ const data = await apiClient
 Fetch a collection along with its related subform:
 
 ```js
-const Client = require("priority-erp-sdk");
+const Client = require("priority-tsdk");
 
 const apiClient = new Client({ url, username, password });
 
@@ -46,7 +46,7 @@ const data = await apiClient
 Paginate a collection:
 
 ```js
-const Client = require("priority-erp-sdk");
+const Client = require("priority-tsdk");
 
 const apiClient = new Client({ url, username, password });
 
@@ -58,7 +58,7 @@ const data = await apiClient.screen("LOGPART").paginate(page, size);
 Combining the operators for a complex query:
 
 ```js
-const Client = require("priority-erp-sdk");
+const Client = require("priority-tsdk");
 
 const apiClient = new Client({ url, username, password });
 
@@ -82,14 +82,12 @@ const data = await apiClient
 
 ## Methods
 
-- (**constructor**)(< object >config) - Creates and returns a new Priority client instance. Valid config properties:
+- (**constructor**)(config) - Creates and returns a new Priority client instance. Valid config properties:
 
   - url - string - The company url to access Priority. Default: (none)
   - company - string - The company short name that should be accessed using the API. Default: (none)
   - username - string - The username used to access Priority Default: (none)
   - password - string - The password used to access Priority Default: (none)
-  - langId - number - The language ID that you want to receive the response in. Only supported if the language is set up in Priority Default: (none)
-  - file - string - The name of the file used that contains the data Default: 'tabula.ini'
 
 - **screen**(< string >screenName) - (< PriorityClient >) - Sets the screen(collection) where the resources are fetched.
 

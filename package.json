@@ -1,10 +1,23 @@
 {
-  "name": "priority-erp-sdk",
-  "version": "1.0.2",
-  "description": "Priority ERP JavaScript SDK",
-  "main": "./src/index.js",
+  "name": "priority-tsdk",
+  "version": "1.0.5",
+  "description": "Priority ERP Typescript SDK",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
   "scripts": {
-    "test": "jest --coverage --detectOpenHandles"
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build"
   },
   "repository": {
     "type": "git",
@@ -12,13 +25,36 @@
   },
   "keywords": ["priority", "priority erp", "priority sdk"],
   "author": "Sirkastik",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Sirkastik/priority-sdk/issues"
   },
   "homepage": "https://github.com/Sirkastik/priority-sdk#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "module": "dist/priority-tsdk.esm.js",
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^8.1.0",
+    "@types/jest": "^29.2.3",
+    "@vitest/coverage-c8": "^0.25.2",
+    "husky": "^8.0.2",
+    "ts-node": "^10.9.1",
+    "tsdx": "^0.14.1",
+    "tslib": "^2.4.1",
+    "typescript": "^3.9.10",
+    "vite": "^3.2.4",
+    "vitest": "^0.25.2"
+  },
   "dependencies": {
-    "axios": "^1.1.3",
-    "jest": "^29.2.2"
+    "axios": "^1.1.3"
   }
 }
