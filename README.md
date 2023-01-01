@@ -19,7 +19,7 @@ const Client = require("priority-tsdk");
 
 const apiClient = new Client({ url, username, password });
 
-// URL : {{baseUrl}}/LOGPART?$filter=TYPE eq 'P' and LASTPRICE gt 200
+// URL : {baseUrl}/LOGPART?$filter=TYPE eq 'P' and LASTPRICE gt 200
 
 const data = await apiClient
   .screen("LOGPART")
@@ -34,7 +34,7 @@ const Client = require('priority-tsdk');
 
 const apiClient = new Client({ url, username, password });
 
-// URL : {{baseUrl}}/ORDERS?$expand=ORDERITEMS_SUBFORM
+// URL : {baseUrl}/ORDERS?$expand=ORDERITEMS_SUBFORM
 
 const data = await apiClient
   .screen('ORDERS')
@@ -50,7 +50,7 @@ const Client = require('priority-tsdk');
 
 const apiClient = new Client({ url, username, password });
 
-// URL : {{baseUrl}}/LOGPART?$top={{size}}&$skip${{offset}}
+// URL : {baseUrl}/LOGPART?$top={size}&$skip${offset}
 
 const data = await apiClient.screen('LOGPART').paginate(page, size);
 ```
@@ -62,7 +62,7 @@ const Client = require('priority-tsdk');
 
 const apiClient = new Client({ url, username, password });
 
-// URL: {{baseUrl}}/ORDERS?$filter=CUSTNAME+eq+'T000001'&$expand=ORDERITEMS_SUBFORM($filter=PRICE+gt+3;$select=KLINE,PARTNAME,PDES,TQUANT,PRICE;$expand=ORDISTATUSLOG_SUBFORM),SHIPTO2_SUBFORM,ORDERSTEXT_SUBFORM&$select=CUSTNAME,CDES,ORDNAME
+// URL: {baseUrl}/ORDERS?$filter=CUSTNAME+eq+'T000001'&$expand=ORDERITEMS_SUBFORM($filter=PRICE+gt+3;$select=KLINE,PARTNAME,PDES,TQUANT,PRICE;$expand=ORDISTATUSLOG_SUBFORM),SHIPTO2_SUBFORM,ORDERSTEXT_SUBFORM&$select=CUSTNAME,CDES,ORDNAME
 
 const data = await apiClient
   .screen('ORDERS')
